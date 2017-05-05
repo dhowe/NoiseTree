@@ -8,7 +8,7 @@ function draw() {
   randomSeed(rs);
   background(0,200,255);
   translate(width/2, height);
-  branch(140);
+  branch(130);
   k += 0.01;
 }
 
@@ -67,7 +67,11 @@ function oline(x1, y1, x2, y2, weight)
   var sections = ceil(dist / 10.0);
   //sections = 8;
 
-  var twist, twist2 = [sections + 1];
+  var twist, twist2 = new Array(sections + 1);
+  for (var i = 0; i < twist2.length; i++) {
+     twist2[i] = 0.0;
+  }
+
   for (var i = 0; i < sections; i++)
   {
     twist = random(-twisti, twisti);
