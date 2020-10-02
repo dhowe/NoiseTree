@@ -1,30 +1,28 @@
-let k = 0, rs = 0, mult = .65, angle=24;
+var k = 0, rs = 0, mult = .65, angle=24;
 
-// TODO: display max-height, leaf-count -> reject too short, too leafy
-//       handle 3rd branchs (max 1 per level, never in a (center?) child)
 function setup() {
-  createCanvas(1100,700);
-  mouseClicked();
+  createCanvas(900,700);
 }
 
 function draw() {
   randomSeed(rs);
   background(0,200,255);
-  translate(width/2+xoff, height);
-  // translate(0, height / 2); //GL
-  branch(130);
+  translate(width/2, height);
+  branch(140);
   k += 0.01;
 }
 
 function branch(len) {
 
   if (len > 4) {
-
+    
     stroke(0,200);
-    let sw = map(len, 200, 4, 20, .1);
+    var sw = map(len, 200, 4, 20, .1);
+    //strokeWeight(sw);
+    //line(0, 0, 0, -len);
     oline(0, 0, 0, -len, sw);
     translate(0, -len);
-
+    
     len *= random(.5,.9);
 
     push();
@@ -36,10 +34,10 @@ function branch(len) {
     rotate(radians(angle + map(noise(1000+k),0,1,-10,10)));
     branch(len);
     pop();
-
+    
     if (random(1) < .5) {
       push();
-      rotate(radians(angle/2 + map(noise(1100+k),0,1,-10,10)));
+      rotate(radians(angle/2 + map(noise(1000+k),0,1,-10,10)));
       branch(len);
       pop();
     }
@@ -54,8 +52,7 @@ function branch(len) {
 }
 
 function mouseClicked() {
-  xoff = random(-5, 5);
-  rs = random(millis());
+  rs = random(1000);
 }
 
 function oline(x1, y1, x2, y2, weight)
@@ -63,23 +60,21 @@ function oline(x1, y1, x2, y2, weight)
   strokeCap(ROUND);
   strokeWeight(weight);
 
-  let twisti = 1 + (weight/24.0);
-  let xd = x2 - x1, yd = y2 - y1;
-  let dist = sqrt(xd * xd + yd * yd);
-  let sections = ceil(dist / 10.0);
+  var twisti = 1 + (weight/24.0);
 
-  let twist, twist2 = new Array(sections + 1);
-  for (let i = 0; i < twist2.length; i++) {
-     twist2[i] = 0.0;
-  }
+  var xd = x2 - x1, yd = y2 - y1;
+  var dist = sqrt(xd * xd + yd * yd);
+  var sections = ceil(dist / 10.0);
+  //sections = 8;
 
-  for (let i = 0; i < sections; i++)
+  var twist, twist2 = [sections + 1];
+  for (var i = 0; i < sections; i++)
   {
     twist = random(-twisti, twisti);
-    let tx1 = x1 + ((xd / sections) * (i)) + twist2[i];
-    let tx2 = x1 + ((xd / sections) * (i + 1)) + twist;
-    let ty1 = y1 + ((yd / sections) * (i));
-    let ty2 = y1 + ((yd / sections) * (i + 1));
+    var tx1 = x1 + ((xd / sections) * (i)) + twist2[i];
+    var tx2 = x1 + ((xd / sections) * (i + 1)) + twist;
+    var ty1 = y1 + ((yd / sections) * (i));
+    var ty2 = y1 + ((yd / sections) * (i + 1));
     if (i == sections - 1)
     {
       tx2 = x2;
