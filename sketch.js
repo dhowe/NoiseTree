@@ -1,6 +1,6 @@
 let k = 0, rs = 0, mult = .65, angle=24;
 
-// TODO: display max-height, leaf-count -> reject too short, too leafy
+// TODO: display max-height, leaf-count -> reject too short/tall, too many/few leaves
 //       handle 3rd branchs (max 1 per level, never in a (center?) child)
 function setup() {
   createCanvas(1100,700);
@@ -9,7 +9,8 @@ function setup() {
 
 function draw() {
   randomSeed(rs);
-  background(0,200,255);
+  //background(0,200,255);
+  background('#00C9DE');
   translate(width/2+xoff, height);
   // translate(0, height / 2); //GL
   branch(130);
@@ -55,7 +56,7 @@ function branch(len) {
 
 function mouseClicked() {
   xoff = random(-5, 5);
-  rs = random(millis());
+  rs = random(Number.MAX_SAFE_INTEGER);
 }
 
 function oline(x1, y1, x2, y2, weight)
