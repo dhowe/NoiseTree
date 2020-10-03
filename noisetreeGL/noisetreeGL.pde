@@ -1,7 +1,7 @@
-float k, hc, rs, bg, xOff, rotZ, fps, trunk, treeH, zOff;
-float mult = .65, angle=24, z = -200;
+float k, hc, rs, bg, xOff, rotZ, fps, trunk, minY, minX, maxX, startY;
+float mult = .65, angle=24, z = -200, startMs = 0, maxMs = 5000;
 int leaves = 0, leafThresh = 16;
-boolean info = true, firstBuild = true;
+boolean info, firstBuild;
 PGraphics pg;
 
 void setup() {
@@ -14,22 +14,30 @@ void setup() {
 void draw() {
   PGraphics gg = pg;
   randomSeed((int)rs);
-
+  if (millis()-startMs > maxMs) {
+    reset();
+    return;
+  }
+  maxX = 0;
+  minX = width;
+  minY = height;
   gg.beginDraw();
   gg.background(bg);//, 200, 255);
   gg.pushMatrix();
   gg.translate(0, 0, z);
   horizon(gg);
 
-  gg.translate(width/2+xOff, height-100, -200);
+  gg.translate(width/2+xOff, height*.9, -200);
+  startY = gg.screenY(0, 0, 0);
+  if (firstBuild) println(startY);
   branch(gg, trunk = random(200, 360));
   gg.popMatrix();
   if (info) showInfo(gg);
   gg.endDraw();
 
   if (firstBuild) { // check tree-size
-    if (treeH > height/3.0 || treeH < height/10.0) {
-      println("reset:"+treeH);
+    if (minY > height/3.0 || minY < height/10.0) {
+      println("reset:"+minY);
       reset();
       return;
     }
@@ -40,20 +48,23 @@ void draw() {
 }
 
 void showInfo(PGraphics g) 
-{
+{  
+  float y = 0;
+  float treeW = (maxX-minX);
+  float treeH = startY - minY;
   g.fill(255);
-  g.textSize(24);
-  //if (frameCount % 10 == 0) fps = frameRate;
-  g.text("fps: "+round(frameRate), 20, 30);
-  g.text("leaves: "+leaves, 20, 60);
+  g.textSize(20);
+  g.text("fps: "+round(frameRate), 20, y+=30);
+  g.text("dim: "+round(treeW)+","+round(treeH), 20, y+=30);
+  g.text("leaves: "+leaves, 20, y+=30);
   if (firstBuild) println(leaves);
-  g.text("trunk: "+trunk, 20, 90);
-  g.text("density: "+(1-(trunk/(float)leaves)), 20, 120);
-  g.text("height: "+treeH, 20, 150);
-  g.text("zOff: "+min(treeH, 0)*5, 20, 180);
+  g.text("trunk: "+trunk, 20, y+=30);
+  g.text("startY: "+startY, 20, y+=30);
+  g.text("density: "+(1-(trunk/(float)leaves)), 20, y+=30);
   g.stroke(255);
-  g.line(0, treeH, width, treeH);
-  g.noStroke();
+  g.noFill();
+  g.rect(minX, startY, treeW, -treeH);
+  //g.line(0,startY,width,startY);
 }
 
 void horizon(PGraphics g) {
@@ -61,6 +72,7 @@ void horizon(PGraphics g) {
   g.translate(0, 0, -1000);
   g.rotateZ(rotZ);
   g.fill(hc);
+  g.noStroke();
   g.rect(-2500, height, 10000, height*5);
   g.popMatrix();
 }
@@ -113,9 +125,19 @@ void drawFlower(PGraphics g, float length) {
 }
 
 void drawLeaf(PGraphics g, float len) {
-  if (g.screenY(0, 0, 0) < treeH) {
-    treeH = g.screenY(0, 0, 0);
+
+  // compute leaf screen position
+  float sx = g.screenX(0, 0, 0);
+  float sy = g.screenY(0, 0, 0);
+  if (sy - leafThresh < minY) {
+    minY = sy - leafThresh;
   }
+  if (sx - leafThresh < minX) {
+    minX = sx - leafThresh;
+  } else if (sx + leafThresh > maxX) {
+    maxX = sx + leafThresh;
+  }
+
   if (len < leafThresh*.6) drawFlower(g, len); 
 
   g.noStroke();
@@ -189,9 +211,9 @@ void mouseClicked(MouseEvent evt) {
 }
 
 void reset() {
-  firstBuild = true;
   leaves = 0;
-  treeH = height;
+  firstBuild = true;
+  startMs = millis();
   rs = random(Integer.MAX_VALUE);
   xOff = random(-35, 35);
   rotZ = radians(random(-3, 3));
