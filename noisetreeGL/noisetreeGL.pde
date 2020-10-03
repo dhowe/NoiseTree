@@ -1,24 +1,17 @@
 float k, hc, rs, bg, xOff, rotZ, fps, minY, minX, maxX, startY;
-float mult = .65, angle=24, z = 0, startMs = 0, maxMs = 5000;
-int leaves = 0, leafThresh = 6, resets = 0, maxBranch = 200;
-boolean info=true, firstBuild;
+float mult = .65, angle=24, z = 0, startMs = 0, maxMs = 10000;
+int leaves = 0, leafThresh = 8, resets = 0, maxBranch = 200, flowThresh=6;
+boolean info, firstBuild;
 PGraphics buf;
-PImage img;
 
 void setup() {
   size(1920, 1080, P3D);
-  img = loadImage("trunk1.png");
   buf = createGraphics(1920, 1080, P3D);
   frameRate(24);
   reset();
 }
 
 void draw() {
-
-  if (millis()-startMs > maxMs) {
-    reset();
-    return;
-  }
   maxX = 0;
   minX = width;
   minY = height;
@@ -32,13 +25,8 @@ void draw() {
   pg.translate(0, 0, z);
   horizon(pg);
 
-  pg.translate(width/2+xOff, height*.9, 0);//-200);
+  pg.translate(width/2+xOff, height*.9, 0);
   startY = pg.screenY(0, 0, 0);
-  //pg.pushMatrix();
-  //pg.translate(xOff, -maxBranch);
-  //pg.scale(.7);
-  //pg.image(img, -25, 0);
-  //pg.popMatrix();
   branch(pg, maxBranch, 1);
   pg.popMatrix();
 
@@ -46,7 +34,11 @@ void draw() {
 
   pg.endDraw();
 
-  if (false&&firstBuild) { // check tree-size
+  if (millis()-startMs > maxMs) {
+    reset();
+    return;
+  }
+  if (firstBuild) { // check tree-size (make function)
     if (leaves < 3000 || leaves > 8000) {
       println("reset"+(resets)+"(L):"+leaves);
       reset();
@@ -79,20 +71,13 @@ void branch(PGraphics g, float len, int depth) {
     // map strokeWeight to branch len
     float sw = map(len, maxBranch, leafThresh, 21, .1);
 
-    //if (depth == 1) {
-      drawBranch(g, 0, 0, 0, -len, sw, depth);
-    //} else {
-    //  g.curveTightness(.6);
-    //  for (int i = 0; i<1; i++) {
-    //    g.curve(random(-2*len, 2*len), 0, random(-15, 15), 0, 0, len, len, 2*len);
-    //  }
-    //}
+    drawBranch(g, 0, 0, 0, -len, sw, depth);
     g.translate(0, -len);
 
     len *= random(.5, .9);
     float slop = len/10.0;
 
-    g.pushMatrix();
+    g.pushMatrix(); // TODO: different angles?
     g.rotate(radians(-angle + map(noise(k), 0, 1, -10, 10)));
     branch(g, len+random(-slop, slop), depth+1);
     g.popMatrix();
@@ -116,7 +101,6 @@ void branch(PGraphics g, float len, int depth) {
 
 void drawFlower(PGraphics g, float length) {
 
-  // (mouseX/(float)width)*255);
   float len = length /2.0;
   for (int i = 0; i < 20; i++) {
     g.stroke(random(200, 255), random(180, 230));
@@ -138,16 +122,16 @@ void drawLeaf(PGraphics g, float len) {
     maxX = sx + leafThresh;
   }
 
-  if (len < leafThresh*.6) drawFlower(g, len); 
+  if (len < flowThresh) drawFlower(g, len); 
 
   g.noStroke();
-  float b =random(100, 180);
+  float b = random(100, 180);
   g.fill(b*.9, b*.45, b, 100);
-  b =random(100, 255);
+  b = random(100, 255);
   g.fill(b*random(.1, .2), b*random(.6, .8), b, 100);
   float sz = random(len, len*2); 
+  
   g.beginShape();
-
   g.vertex(-sz, -sz, -sz);
   g.vertex( sz, -sz, -sz);
   g.vertex(   0, 0, sz);
@@ -164,17 +148,12 @@ void drawLeaf(PGraphics g, float len) {
   g.vertex(-sz, -sz, -sz);
   g.vertex(   0, 0, sz);
   g.endShape();
-  //g.ellipse(0, 0, random(2, 5), random(10, 20));
-  //g.text(random(1)>.5 ? '1':'0',0,0);//,random(2,5),random(10,20));
-  //g.text('1',0,0);
 }
 
 void drawBranch(PGraphics g, float x1, float y1, float x2, float y2, float weight, int depth)
 {
-  //stroke(colors[1] & ~#000000 | round(map(weight, 0, 14, 120, 400)));
-  //g.strokeCap(ROUND);
-
-  float col =random(20);
+  //g.strokeCap(ROUND); // needed?
+  float col = random(20);
   if (depth <4) {
     g.stroke(20);
     g.strokeWeight(weight*(depth == 1?.97:.9));
@@ -212,7 +191,7 @@ void drawBranch(PGraphics g, float x1, float y1, float x2, float y2, float weigh
 void showInfo(PGraphics g) 
 {  
   float y = 0;
-  float treeW = (maxX-minX);
+  float treeW = maxX - minX;
   float treeH = startY - minY;
   g.fill(255);
   g.textSize(20);
@@ -220,20 +199,17 @@ void showInfo(PGraphics g)
   g.text("dim: "+round(treeW)+","+round(treeH), 20, y+=30);
   g.text("leaves: "+leaves, 20, y+=30);
   g.text("zoom: "+z, 20, y+=30);
-  //if (firstBuild) println(leaves);
-  //g.text("trunk: "+trunk, 20, y+=30);
-  //g.text("startY: "+startY, 20, y+=30);
-  //g.text("density: "+(1-(trunk/(float)leaves)), 20, y+=30);
-  g.stroke(200, 100);
+  g.stroke(200);//, 100);
   g.noFill();
+  g.strokeWeight(1);
   g.rect(minX, startY, treeW, -treeH);
-  //g.line(0,startY,width,startY);
 }
 
 void horizon(PGraphics g) {
   g.pushMatrix();
-  g.translate(0, 0, -1000);
   g.rotateZ(rotZ);
+  g.translate(0, -200, 0);//-1000);
+  
   g.fill(hc);
   g.noStroke();
   g.rect(-2500, height, 10000, height*5);
@@ -244,9 +220,13 @@ void mouseWheel(MouseEvent event) {
   z -= 10 * event.getCount();
 }
 
+void keyPressed() {
+  if (key== 'i')  info = !info;
+}
+
 void mouseClicked(MouseEvent evt) {
   reset();
-  //if (evt != null && evt.getCount() == 2) {
+  //if (evt != null && evt.getCount() == 2) {}
 }
 
 void reset() {
@@ -256,8 +236,8 @@ void reset() {
   firstBuild = true;
   startMs = millis();
   rs = random(Integer.MAX_VALUE);
-  xOff = 0;//random(-35, 35);
-  rotZ = radians(random(-3, 3));
+  xOff = random(-35, 35);
+  rotZ = radians(random(-2, 2));
   bg = random(120, 150);
   hc = random(40, 60);
 }
